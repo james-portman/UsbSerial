@@ -277,32 +277,6 @@ public class PL2303SerialDevice extends UsbSerialDevice
         level = 65535;
       }
       setControlCommand(PL2303_BREAK_REQUEST_TYPE, PL2303_BREAK_REQUEST, level, 0, defaultSetLine);
-
-      // private int setControlCommand(int reqType , int request, int value, int index, byte[] data)
-      // {
-      //     int dataLength = 0;
-      //     if(data != null)
-      //         dataLength = data.length;
-      //     int response = connection.controlTransfer(reqType, request, value, index, data, dataLength, USB_TIMEOUT);
-      //     Log.i(CLASS_ID,"Control Transfer Response: " + String.valueOf(response));
-      //     return response;
-      // }
-
-      // int result = this.mConnection.controlTransfer(33, BREAK_REQUEST, level, 0, null, 0, 5000);
-      // if (result != 0) {
-      //   throw new IOException("-ERR, [prolificSerial] Setting setBreak failed: result=" + result);
-      // }
-
-      // int state;
-      // if (!level) {
-      //   state = 0;
-      // } else {
-      //   state = 65535;
-      // }
-      // int result = this.mConnection.controlTransfer(33, BREAK_REQUEST, state, 0, null, 0, 5000);
-      // if (result != 0) {
-      //   throw new IOException("-ERR, [prolificSerial] Setting setBreak failed: result=" + result);
-      // }
     }
 
     @Override
