@@ -22,6 +22,9 @@ public class PL2303SerialDevice extends UsbSerialDevice
     private static final int PL2303_SET_LINE_CODING = 0x20;
     private static final int PL2303_SET_CONTROL_REQUEST = 0x22;
 
+    private static final int PL2303_BREAK_REQUEST = 0x23; // 35;
+    private static final int PL2303_BREAK_REQUEST_TYPE = 0x21; // 33;
+
     private final byte[] defaultSetLine = new byte[]{
             (byte) 0x80, // [0:3] Baud rate (reverse hex encoding 9600:00 00 25 80 -> 80 25 00 00)
             (byte) 0x25,
@@ -267,7 +270,39 @@ public class PL2303SerialDevice extends UsbSerialDevice
     @Override
     public void setBreak(boolean state)
     {
-        //TODO
+      int level;
+      if (!state) {
+        level = 0;
+      } else {
+        level = 65535;
+      }
+      setControlCommand(PL2303_BREAK_REQUEST_TYPE, PL2303_BREAK_REQUEST, level, 0, defaultSetLine);
+
+      // private int setControlCommand(int reqType , int request, int value, int index, byte[] data)
+      // {
+      //     int dataLength = 0;
+      //     if(data != null)
+      //         dataLength = data.length;
+      //     int response = connection.controlTransfer(reqType, request, value, index, data, dataLength, USB_TIMEOUT);
+      //     Log.i(CLASS_ID,"Control Transfer Response: " + String.valueOf(response));
+      //     return response;
+      // }
+
+      // int result = this.mConnection.controlTransfer(33, BREAK_REQUEST, level, 0, null, 0, 5000);
+      // if (result != 0) {
+      //   throw new IOException("-ERR, [prolificSerial] Setting setBreak failed: result=" + result);
+      // }
+
+      // int state;
+      // if (!level) {
+      //   state = 0;
+      // } else {
+      //   state = 65535;
+      // }
+      // int result = this.mConnection.controlTransfer(33, BREAK_REQUEST, state, 0, null, 0, 5000);
+      // if (result != 0) {
+      //   throw new IOException("-ERR, [prolificSerial] Setting setBreak failed: result=" + result);
+      // }
     }
 
     @Override
