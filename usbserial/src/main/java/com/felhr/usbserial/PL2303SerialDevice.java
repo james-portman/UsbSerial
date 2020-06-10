@@ -129,12 +129,38 @@ public class PL2303SerialDevice extends UsbSerialDevice
     public void setBaudRate(int baudRate)
     {
         byte[] tempBuffer = new byte[4];
-        tempBuffer[0] = (byte) (baudRate & 0xff);
-        tempBuffer[1] = (byte) (baudRate >> 8 & 0xff);
-        tempBuffer[2] = (byte) (baudRate >> 16 & 0xff);
-        tempBuffer[3] = (byte) (baudRate >> 24 & 0xff);
-        if(tempBuffer[0] != defaultSetLine[0] || tempBuffer[1] != defaultSetLine[1] || tempBuffer[2] != defaultSetLine[2]
-                || tempBuffer[3] != defaultSetLine[3])
+
+        /*
+        custom baud fudge for 10400 from https://github.com/danvd/pl2303_kline_10400/blob/master/pl2303_kline_10400.c
+        buf[3] = 0x80;
+	      buf[2] = 0;
+	      buf[1] = exponent << 1 | mantissa >> 8;
+	      buf[0] = mantissa & 0xff;
+
+	      // Calculate and return the exact baud rate.
+	      baud = (baseline / mantissa) >> (exponent << 1);
+        */
+        if(baudRate == 10400) {
+
+    	      tempBuffer[3] = 0x80;
+    	      tempBuffer[2] = 0x00;
+    	      tempBuffer[1] = 0x08;
+    	      tempBuffer[0] = 0x90;
+
+        } else {
+
+            tempBuffer[0] = (byte) (baudRate & 0xff);
+            tempBuffer[1] = (byte) (baudRate >> 8 & 0xff);
+            tempBuffer[2] = (byte) (baudRate >> 16 & 0xff);
+            tempBuffer[3] = (byte) (baudRate >> 24 & 0xff);
+
+        }
+
+        // only change the baud if we are asking for a different one, did hear about problems even setting it to the same one:
+        if(tempBuffer[0] != defaultSetLine[0]
+        || tempBuffer[1] != defaultSetLine[1]
+        || tempBuffer[2] != defaultSetLine[2]
+        || tempBuffer[3] != defaultSetLine[3])
         {
             defaultSetLine[0] = tempBuffer[0];
             defaultSetLine[1] = tempBuffer[1];
@@ -379,6 +405,7 @@ public class PL2303SerialDevice extends UsbSerialDevice
         // End of specific vendor stuff
         if(setControlCommand(PL2303_REQTYPE_HOST2DEVICE, PL2303_SET_CONTROL_REQUEST, 0x0003, 0,null) < 0)
             return false;
+        // set baud etc:
         if(setControlCommand(PL2303_REQTYPE_HOST2DEVICE, PL2303_SET_LINE_CODING, 0x0000, 0, defaultSetLine) < 0)
             return false;
         if(setControlCommand(PL2303_REQTYPE_HOST2DEVICE_VENDOR, PL2303_VENDOR_WRITE_REQUEST, 0x0505, 0x1311, null) < 0)
