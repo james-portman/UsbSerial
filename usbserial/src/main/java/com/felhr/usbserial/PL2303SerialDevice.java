@@ -142,10 +142,10 @@ public class PL2303SerialDevice extends UsbSerialDevice
         */
         if(baudRate == 10400) {
 
-    	      tempBuffer[3] = 0x80;
-    	      tempBuffer[2] = 0x00;
-    	      tempBuffer[1] = 0x08;
-    	      tempBuffer[0] = 0x90;
+    	      tempBuffer[3] = (byte) 0x80;
+    	      tempBuffer[2] = (byte) 0x00;
+    	      tempBuffer[1] = (byte) 0x08;
+    	      tempBuffer[0] = (byte) 0x90;
 
         } else {
 

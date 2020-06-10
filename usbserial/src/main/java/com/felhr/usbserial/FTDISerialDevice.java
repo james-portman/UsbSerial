@@ -914,6 +914,18 @@ public class FTDISerialDevice extends UsbSerialDevice
             value = FTDI_BAUDRATE_9600;
         else if(baudRate > 9600 && baudRate <=19200)
             value = FTDI_BAUDRATE_19200;
+            /*
+            TODO: fix baud rate for 10400
+
+            REGEDIT4
+[FtdiPort232.NT.HW.AddReg]
+HKR,,ConfigData,1,11,00,3F,3F,10,27,00,00,88,13,00,00,C4,09,00,00,E2,04,00,00,71,02,00,00,38,41,00,00,9C,80,00,00,4E,C0,00,00,34,00,00,00,1A,00,00,00,0D,00,00,00,06,40,00,00,20,41,00,00,00,00,00,00,D0,80,00,00
+
+https://www.ftdichip.com/Support/Documents/AppNotes/AN232B-05_BaudRates.pdf
+
+https://www.ftdichip.com/Support/Knowledgebase/index.html?aliasingbaudrates.htm
+
+            */
         else if(baudRate > 19200 && baudRate <= 38400)
             value = FTDI_BAUDRATE_38400;
         else if(baudRate > 19200 && baudRate <= 57600)
