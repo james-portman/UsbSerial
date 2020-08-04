@@ -194,11 +194,14 @@ public class FTDISerialDevice extends UsbSerialDevice
     @Override
     public void setBaudRate(int baudRate)
     {
+        Log.i(CLASS_ID, "setBaudRate");
         short[] encodedBaudRate = encodedBaudRate(baudRate);
 
         if(encodedBaudRate != null) {
+            Log.i(CLASS_ID, "setBaudRate using encoded baud rate");
             setEncodedBaudRate(encodedBaudRate);
         } else {
+            Log.i(CLASS_ID, "setBaudRate using basic baud rate (bad)");
             setOldBaudRate(baudRate);
         }
     }
