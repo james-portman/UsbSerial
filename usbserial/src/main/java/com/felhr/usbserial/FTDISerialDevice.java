@@ -198,7 +198,7 @@ public class FTDISerialDevice extends UsbSerialDevice
 
         if(encodedBaudRate != null) {
             setEncodedBaudRate(encodedBaudRate);
-        }else{
+        } else {
             setOldBaudRate(baudRate);
         }
     }
@@ -825,9 +825,16 @@ public class FTDISerialDevice extends UsbSerialDevice
                 0, -1, -2, -3,  4,  3,  2,  1,
         };
 
+        // if (baudRate == 10400) {
+        //   ret[0] = 0x20;
+        //   ret[1] = 0x41;
+        //   return ret;
+        // }
+
         short bcdDevice = getBcdDevice();
 
         if(bcdDevice == -1) {
+            Log.i(CLASS_ID, "getBcdDevice returned -1, not doing encodedBaudRate");
             return null;
         }
 
@@ -852,6 +859,7 @@ public class FTDISerialDevice extends UsbSerialDevice
         }
 
         if(baudRate < (clk >> 14) || baudRate > clk) {
+            Log.i(CLASS_ID, "baudRate < (clk >> 14) || baudRate > clk, not doing encodedBaudRate");
             return null;
         }
 
@@ -868,6 +876,7 @@ public class FTDISerialDevice extends UsbSerialDevice
         hwSpeed = (clk << 3) / divisor;
 
         if(!isBaudTolerated(hwSpeed, baudRate)) {
+            Log.i(CLASS_ID, "baud rate not tolerated, not doing encodedBaudRate");
             return null;
         }
 
@@ -894,9 +903,71 @@ public class FTDISerialDevice extends UsbSerialDevice
     }
 
     private void setEncodedBaudRate(short[] encodedBaudRate) {
-        connection.controlTransfer(FTDI_REQTYPE_HOST2DEVICE, FTDI_SIO_SET_BAUD_RATE
-                , encodedBaudRate[0], encodedBaudRate[1] | (mInterface.getId() + 1), null, 0, USB_TIMEOUT);
+        connection.controlTransfer(FTDI_REQTYPE_HOST2DEVICE, FTDI_SIO_SET_BAUD_RATE, encodedBaudRate[0], encodedBaudRate[1] | (mInterface.getId() + 1), null, 0, USB_TIMEOUT);
     }
+
+    /*
+    TODO: fix baud rate for 10400
+
+    should it already be working since the above is tried first?
+
+    REGEDIT4
+[FtdiPort232.NT.HW.AddReg]
+HKR,,ConfigData,1,11,00,3F,3F,10,27,00,00,88,13,00,00,C4,09,00,00,E2,04,00,00,71,02,00,00,38,41,00,00,9C,80,00,00,4E,C0,00,00,34,00,00,00,1A,00,00,00,0D,00,00,00,06,40,00,00,20,41,00,00,00,00,00,00,D0,80,00,00
+
+https://www.ftdichip.com/Support/Documents/AppNotes/AN232B-05_BaudRates.pdf
+
+https://www.ftdichip.com/Support/Knowledgebase/index.html?aliasingbaudrates.htm
+
+
+
+Each field consists of a pair of bytes, ordered as follows: Byte0,Byte1. Bits 13 through 0 denote the
+integer divisor while bits 16, 15 and 14 denote the sub-integer divisor, as follows
+15,14 = 00 - sub-integer divisor = 0
+15,14 = 01 - sub-integer divisor = 0.5
+15,14 = 10 - sub-integer divisor = 0.25
+15,14 = 11 - sub-integer divisor = 0.125
+The divisor can be extracted for each entry in a few simple steps, as shown here for the entry
+9c,80
+Step 1 - re-order the bytes: 9c,80 => 809c Hex
+Step 2 - extract the sub-integer divisor; 15 = 1, 14 = 0 => sub-integer = 0.25
+Step 3 - extract the integer divisor: 13:0 = 009c Hex = 156 Dec
+Step 4 - combine the integer and sub-integer divisors: 156.25 Dec
+Step 5 - divide 3000000 by the divisor=> 3000000/156.25 = 19,200 baud
+The following lists the standard values and their respective baud rates.
+10,27 => divisor = 10000, rate = 300
+88,13 => divisor = 5000, rate = 600
+C4,09 => divisor = 2500, rate = 1200
+E2,04 => divisor = 1250, rate = 2,400
+71,02 => divisor = 625, rate = 4,800
+38,41 => divisor = 312.5, rate = 9,600
+9C,80 => divisor = 156, rate = 19,230
+4E,C0 => divisor = 78, rate = 38,461
+34,00 => divisor = 52, rate = 57,692
+1A,00 => divisor = 26, rate = 115,384
+0D,00 => divisor = 13, rate = 230,769
+06,40 => divisor = 6.5, rate = 461,538
+03,80 => divisor = 3.25, rate = 923,076
+00,00 => RESERVED
+D0,80 => divisor = 208.25, rate = 14406
+
+
+
+we want 10400
+
+3000000 / 10400 = 288.461538461538
+integer divisor = 288
+decimal = 0.5 (closest) (01 in bits 15,14)
+gives an effective baud rate of 10398.6135181976
+
+divisor = 288 + 0b0100000000000000
+= 16672 = 0x4120
+reorder the bytes
+divisor_0 = divisor & 0xFF = 0x20
+divisor_1 = divisor >> 8 = 0x41
+
+
+    */
 
     private void setOldBaudRate(int baudRate) {
         int value = 0;
@@ -914,18 +985,6 @@ public class FTDISerialDevice extends UsbSerialDevice
             value = FTDI_BAUDRATE_9600;
         else if(baudRate > 9600 && baudRate <=19200)
             value = FTDI_BAUDRATE_19200;
-            /*
-            TODO: fix baud rate for 10400
-
-            REGEDIT4
-[FtdiPort232.NT.HW.AddReg]
-HKR,,ConfigData,1,11,00,3F,3F,10,27,00,00,88,13,00,00,C4,09,00,00,E2,04,00,00,71,02,00,00,38,41,00,00,9C,80,00,00,4E,C0,00,00,34,00,00,00,1A,00,00,00,0D,00,00,00,06,40,00,00,20,41,00,00,00,00,00,00,D0,80,00,00
-
-https://www.ftdichip.com/Support/Documents/AppNotes/AN232B-05_BaudRates.pdf
-
-https://www.ftdichip.com/Support/Knowledgebase/index.html?aliasingbaudrates.htm
-
-            */
         else if(baudRate > 19200 && baudRate <= 38400)
             value = FTDI_BAUDRATE_38400;
         else if(baudRate > 19200 && baudRate <= 57600)
